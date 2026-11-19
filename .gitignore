@@ -1,0 +1,44 @@
+# Build trees and generated binaries
+/build/
+/build-*/
+*.o
+*.obj
+*.exe
+pso
+pso_serial
+pso_mpi_ms
+pso_mpi_island
+pso_env_probe
+
+# Python caches
+__pycache__/
+*.pyc
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Scratch benchmark outputs of the quick smoke script (formal experiment
+# directories under results/ are measured evidence and stay tracked)
+/results/raw_serial.log
+/results/raw_mpi_ms.log
+/results/raw_mpi_island.log
+/results/smoke_summary.csv
+# 改名前的冒烟产物仍会留在旧工作树里，一并忽略以免误提交
+/results/summary.csv
+/results/timing.png
+
+# Tool scratch state
+/.mimosa/
+/.workbuddy-ai/
+/.zcode/
+/.code-review-graph/
+/.zcodeignore
+
+# 根目录的临时构建日志（快速验证产物，不入库）
+/build-*.log
+
+# 本地工具会话产物（审阅期间登记，防误提交）
+/.qoder-credits/

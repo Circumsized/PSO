@@ -1,0 +1,9 @@
+2026-09-11 无效部分运行标记
+
+旧 runner 语义未包含 --no-early-stop。
+execute 约 16 秒后被宿主中止。
+serial 日志包含 30 条 command、30 条 result。
+mpi-ms 日志包含 3 条 command、2 条 result。
+manifest 仍为 dry_run=true。
+
+本目录全部样本禁止用于正式统计或追加。

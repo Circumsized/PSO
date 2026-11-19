@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux GCC (${{ matrix.build_type }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Release, Debug]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MPI
+        run: sudo apt-get update && sudo apt-get install -y openmpi-bin libopenmpi-dev
+      - name: Configure
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DPSO_ENABLE_MPI=ON -DPSO_ENABLE_OPENMP=ON \
+            ${{ matrix.build_type == 'Debug' && '-DPSO_ENABLE_SANITIZERS=ON' || '' }} \
+            > configure.log 2>&1 || { cat configure.log; exit 1; }
+          # FindMPI 失败时 CMake 只降级 WARNING 并跳过 MPI targets，
+          # ctest 会以更少的测试变绿；必须断言 MPI 真的生效。
+          grep -q "PSO_ENABLE_MPI=ON" configure.log || { cat configure.log; exit 1; }
+          # sanitizer 缺库时同样只降级 WARNING（auto-disable），Debug 作业
+          # 必须断言真的生效，否则整条 ASan/UBSan 通路静默失守。
+          if [ "${{ matrix.build_type }}" = "Debug" ]; then
+            grep -q "sanitizers enabled" configure.log || { cat configure.log; exit 1; }
+          fi
+          # find_package(OpenMP) 失败时 pso_core 静默单线程化、测试线程数
+          # 期望值自适应为 1——整套矩阵会在零 OpenMP 覆盖下全绿，必须断言。
+          grep -q "OpenMP_C_FOUND=TRUE" configure.log || { cat configure.log; exit 1; }
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --timeout 120
+        env:
+          # 与 scripts/linux_docker_check.sh 对齐：OpenMPI 下 LSan 的
+          # 已知假阳（vader 单拷贝区）不当作本项目泄漏。
+          ASAN_OPTIONS: detect_leaks=0
+          # 编译级 -fno-sanitize-recover 之外的第二道闸：任何途径漏过的
+          # 可恢复 UBSan 诊断都会打印 runtime error 并被 FAIL 正则接住。
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+
+  windows:
+    name: Windows MinGW + MS-MPI
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MS-MPI
+        shell: pwsh
+        run: |
+          $msmpi = 'https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.2/msmpisdk.msi'
+          $msmpiRuntime = 'https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.2/msmpisetup.exe'
+          curl -L -o msmpisdk.msi $msmpi
+          curl -L -o msmpisetup.exe $msmpiRuntime
+          # Start-Process -Wait 不传播子进程退出码，必须 -PassThru 后读取
+          # ExitCode，否则 MSI 静默失败会让整个作业在无 MPI 覆盖下变绿。
+          $sdk = Start-Process msiexec.exe -ArgumentList '/quiet /i msmpisdk.msi' -Wait -PassThru
+          if ($sdk.ExitCode -ne 0) { throw "msmpisdk.msi install failed with exit code $($sdk.ExitCode)" }
+          $runtime = Start-Process .\msmpisetup.exe -ArgumentList '-unattend' -Wait -PassThru
+          if ($runtime.ExitCode -ne 0) { throw "msmpisetup.exe install failed with exit code $($runtime.ExitCode)" }
+      - name: Configure (MinGW)
+        shell: cmd
+        run: |
+          set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ^
+            -DPSO_ENABLE_MPI=ON -DPSO_ENABLE_OPENMP=ON > configure.log 2>&1
+          if errorlevel 1 (type configure.log & exit /b 1)
+          rem FindMPI 失败会被 CMake 降级成 WARNING 并跳过 MPI targets，必须断言生效
+          findstr /C:"-- PSO_ENABLE_MPI=ON" configure.log >nul
+          if errorlevel 1 (type configure.log & exit /b 1)
+          findstr /C:"-- OpenMP_C_FOUND=TRUE" configure.log >nul
+          if errorlevel 1 (type configure.log & exit /b 1)
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --timeout 120
+        env:
+          OMP_NUM_THREADS: 2
+
+  python-tools:
+    name: Python tooling
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: python -m unittest discover -s scripts/tests -p 'test_*.py' -v
