@@ -19,3 +19,6 @@
   Linux/Windows/Python 三作业。
 - 已登记延后项：MPI 余数预算钉子与 MPI 写失败回归（需 Linux CI 绿灯），
   见 `docs/03` 的复验记录。
+- 2026-11-20 GitHub Actions 四作业（Windows MS-MPI / Linux Debug+ASan+UBSan /
+  Linux Release / Python）首次全绿（run 44653870418）：MS-MPI 资产钉定 v10.1.1、
+  OpenMPI 4-rank 测试加 `--oversubscribe`、manifest 主机探测在 runner 上降级不中断。
