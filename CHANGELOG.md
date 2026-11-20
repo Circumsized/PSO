@@ -155,6 +155,15 @@
   （记号表 15→10 行合并条目）；章节重排（术语表提前至 §4，设计原理 §9），
   全部节内引用已同步。
 
+- 数学公式渲染修复轮（用户报告 GitHub 渲染报「The following macros are not
+  allowed: operatorname」）：docs/05 全文 22 处宏替换为 GitHub MathJax 允许集
+  内的标准 LaTeX——`\operatorname{clip}/{median}` → `\mathrm`（3 处）、
+  `oldsymbol` → `\mathbf`（19 处，向量与最优值的加粗语义不变）；核查其余
+  31 个 TeX 命令全部在允许集（`egin{cases}`、`\odot`、`mod`、`\qquad`
+  等），15 个 `$$` 块分隔符配对完整、块内无空行，docs/02 行内公式无风险。
+  GitHub REST API 不渲染数学（无法机器闭环验证），以报错原文与已知禁用清单
+  为准取最保守构造。
+
 ## [1.0.0] - 2026-11-19
 
 ### Added

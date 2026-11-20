@@ -14,7 +14,7 @@
 程序求解有界连续最小化问题：
 
 $$
-\min_{\boldsymbol{x}\in[\ell,u]^D} f(\boldsymbol{x}).
+\min_{\mathbf{x}\in[\ell,u]^D} f(\mathbf{x}).
 $$
 
 所有维度使用相同上下界。当前 CLI 只支持内置函数，不接收用户函数回调或 MATLAB 函数句柄。算法基础见文献 [R1]。
@@ -27,9 +27,9 @@ $$
 | $B$ | 配置的函数评估预算 |
 | $K$ | 初始化后允许执行的更新代数 |
 | $t$ | 更新步骤索引，从 0 开始 |
-| $\boldsymbol{x}_i,\boldsymbol{v}_i$ | 粒子 $i$ 的位置和速度 |
-| $\boldsymbol{p}_i$ | 粒子 $i$ 历史最好位置，即 pbest |
-| $\boldsymbol{s}$ | 本代使用的社会最优位置，即 social best |
+| $\mathbf{x}_i,\mathbf{v}_i$ | 粒子 $i$ 的位置和速度 |
+| $\mathbf{p}_i$ | 粒子 $i$ 历史最好位置，即 pbest |
+| $\mathbf{s}$ | 本代使用的社会最优位置，即 social best |
 | $r_1,r_2$ | 每次维度更新使用的伪随机数，取值在 $[0,1)$ |
 | $m$ | 岛模型迁移周期，单位为代 |
 
@@ -41,11 +41,11 @@ $$
 
 | 函数 | 定义 | 默认区间 | 一个已知最优点 |
 |---|---|---|---|
-| Sphere | $\sum_{j=1}^{D}x_j^2$ | $[-100,100]$ | $\boldsymbol{0}$ |
-| Rosenbrock | $\sum_{j=1}^{D-1}[100(x_{j+1}-x_j^2)^2+(x_j-1)^2]$ | $[-100,100]$ | $\boldsymbol{1}$，通常使用 $D\ge2$ |
-| Rastrigin | $\sum_{j=1}^{D}[x_j^2-10\cos(2\pi x_j)+10]$ | $[-5.12,5.12]$ | $\boldsymbol{0}$ |
-| Griewank | $1+\sum_{j=1}^{D}x_j^2/4000-\prod_{j=1}^{D}\cos(x_j/\sqrt{j})$ | $[-600,600]$ | $\boldsymbol{0}$ |
-| Ackley | $-20\exp[-0.2\sqrt{\sum_j x_j^2/D}]-\exp[\sum_j\cos(2\pi x_j)/D]+20+e$ | $[-32.768,32.768]$ | $\boldsymbol{0}$ |
+| Sphere | $\sum_{j=1}^{D}x_j^2$ | $[-100,100]$ | $\mathbf{0}$ |
+| Rosenbrock | $\sum_{j=1}^{D-1}[100(x_{j+1}-x_j^2)^2+(x_j-1)^2]$ | $[-100,100]$ | $\mathbf{1}$，通常使用 $D\ge2$ |
+| Rastrigin | $\sum_{j=1}^{D}[x_j^2-10\cos(2\pi x_j)+10]$ | $[-5.12,5.12]$ | $\mathbf{0}$ |
+| Griewank | $1+\sum_{j=1}^{D}x_j^2/4000-\prod_{j=1}^{D}\cos(x_j/\sqrt{j})$ | $[-600,600]$ | $\mathbf{0}$ |
+| Ackley | $-20\exp[-0.2\sqrt{\sum_j x_j^2/D}]-\exp[\sum_j\cos(2\pi x_j)/D]+20+e$ | $[-32.768,32.768]$ | $\mathbf{0}$ |
 
 表中函数的理论最小值均为 0。浮点计算可能在最优点附近产生舍入误差。Rosenbrock 在 `dim=1` 时是空和，当前实现返回 0；该配置不适合用来评价搜索能力。
 
@@ -90,9 +90,9 @@ $$
 文献 [R2] 中常用的收缩形式为：
 
 $$
-\boldsymbol{v}^{+}=\chi[\boldsymbol{v}
-+\phi_1\boldsymbol{r}_1\odot(\boldsymbol{p}-\boldsymbol{x})
-+\phi_2\boldsymbol{r}_2\odot(\boldsymbol{s}-\boldsymbol{x})],
+\mathbf{v}^{+}=\chi[\mathbf{v}
++\phi_1\mathbf{r}_1\odot(\mathbf{p}-\mathbf{x})
++\phi_2\mathbf{r}_2\odot(\mathbf{s}-\mathbf{x})],
 $$
 
 $$
@@ -126,7 +126,7 @@ $$
 
 $$
 q_t=\begin{cases}
-\operatorname{clip}(t/(K-1),0,1), & K>1,\\
+\mathrm{clip}(t/(K-1),0,1), & K>1,\\
 0, & K\le1,
 \end{cases}
 \qquad V_t=\rho(u-\ell)(1-0.5q_t).
@@ -287,7 +287,7 @@ OpenMP 可降低本地粒子循环时间，但线程启动、同步和内存访�
 
 速度比使用同一协议下的时间中位数之比：
 
-$$S=\frac{\operatorname{median}(T_{\mathrm{serial}})}{\operatorname{median}(T_{\mathrm{candidate}})}.$$
+$$S=\frac{\mathrm{median}(T_{\mathrm{serial}})}{\mathrm{median}(T_{\mathrm{candidate}})}.$$
 
 $S>1$ 表示候选配置的所测时间更短。质量同时报告最终 best、成功率及首次命中评估数。参考配置与候选配置的目标函数、总预算、线程和亲和性条件必须明确。
 
