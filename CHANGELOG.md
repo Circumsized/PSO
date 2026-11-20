@@ -51,6 +51,20 @@
   ctest_gate 退出码归一化与超时用例、analyze_speedups mode 拒绝用例。
   Python 184→188。金标正则与 MPI 钉子逐位不变（全量重建零警告，
   CTest 48/48、Python 188 全绿）。
+- RNG 单元金标与出处归档（联网取证轮）：`tests/test_rng.c` 增加
+  xoshiro256++ 位流金标准（`pso_rng_next`/`double`/`range`/`below`
+  固定输出、流派生差异值、`n<=1` 边界），把不变量 #1 的地基从端到端
+  金标间接钉住升级为单元直钉；`pso_rng_below` 注释按实际算法精确
+  命名（经典无偏取模，非 Lemire Algorithm 5 乘积高位变体）；
+  `pso_rng.h` 归档流派生仿射派生偏离主流做法的已知限制（NumPy
+  并行 RNG 文档将 `root_seed+worker_id` 式派生列为 UNSAFE；因位级
+  复现红线不修改，留待主版本）。
+- 外部依据登记：docs/07 新增 [R9]–[R13]（OpenMPI man page v4.1、
+  MS-MPI `MPIEXEC_AFFINITY` 源码与文档、Lemire 无偏区间整数论文、
+  NumPy 并行 RNG 文档、SPSO-2011/CEC-2013 基准套件），每条带用途
+  与限制；docs/03 绑核段补官方依据引用；AGENTS.md 新增「修复与
+  复审流程」节（批次化、计数级联、外部来源登记、独立复审、红线
+  核查、门禁七条）。
 
 ## [1.0.0] - 2026-11-19
 

@@ -50,3 +50,13 @@ python -m unittest discover -s scripts/tests -p 'test_*.py' -v
 - C11 with `CMAKE_C_EXTENSIONS OFF` (strict `-std=c11`) and project-wide `-Wall -Wextra -Wpedantic` (`/W4` on MSVC); the tree is expected to stay zero-warning. Because extensions are off, POSIX calls need feature-test macros (e.g. `_GNU_SOURCE` for `clock_gettime`) — this has bitten before.
 - Windows/MinGW specifics are isolated behind the `pso_mpi` INTERFACE target in `CMakeLists.txt` (no `mpicc` wrapper with MS-MPI; `mpi.h` is included as SYSTEM because `-Wpedantic` trips on it). Keep FindMPI handling inside that target.
 - Parser scripts hard-fail on budget inconsistencies and log-name drift rather than warning; preserve that behavior in new tooling.
+
+## 修复与复审流程
+
+1. 修复按批次组织，每批次独立提交，CHANGELOG 同批更新；批次间文件有交集时串行，无交集可并行派发。
+2. 测试计数（CTest/Python）任何变动必须同批级联：AGENTS.md 计数句、CHANGELOG 计数条目，改完 grep 全仓核对（级联断裂曾把 188 写成 186）。
+3. 历史溯源声明只修归属错误，不改写历史事实；引用 CI run 号前先 `gh run view` 核实日志中的实际项数。
+4. 外部事实主张（工具链行为、文献结论）必须附官方来源并登记到 docs/07，含「用途」与「限制」两栏；查不到就写缺口，不用二手来源充当官方依据。
+5. 独立复审换人执行（发现者不复核）；每条将作为事实行动的发现先经独立复核或确定性检查证实，未证实的标注「未复核」。
+6. 红线核查每次必做：`results/formal-*` 只读（`git diff` 该路径为空）、求解轨迹不变（金标全绿）、不引入新依赖。
+7. 门禁：全量重建零警告 + `ctest -C Release` 全绿 + Python 全套件 + 六个 formal manifest root 只读实跑（`plot_results --manifest-root`，`--output` 到临时目录）。

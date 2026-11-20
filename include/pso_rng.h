@@ -81,7 +81,11 @@ static inline double pso_rng_range(pso_rng_t *r, double lo, double hi)
     return lo + (hi - lo) * pso_rng_double(r);
 }
 
-/* 无偏的 [0,n) 整数：用 Lemire 拒绝采样，避免 rand()%n 的取模偏置。 */
+/* 无偏的 [0,n) 整数：拒绝采样取模，避免 rand()%n 的取模偏置。
+ * 阈值 threshold=(2^64-n)%n（与 Lemire 2019 论文同式的溢出安全等价），
+ * 拒绝 v<threshold 后返回 v%n——这是经典无偏取模（arc4random_uniform
+ * 同式），不是 Lemire Algorithm 5 的乘积高位变体。本函数当前无生产
+ * 调用方（仅测试使用），保留作工具函数。 */
 static inline uint64_t pso_rng_below(pso_rng_t *r, uint64_t n)
 {
     uint64_t threshold, v;
@@ -97,7 +101,17 @@ static inline uint64_t pso_rng_below(pso_rng_t *r, uint64_t n)
     }
 }
 
-/* 由 base_seed 与粒子流编号确定性派生 RNG 状态。 */
+/* 由 base_seed 与粒子流编号确定性派生 RNG 状态。
+ *
+ * 已知限制（有意保留并归档，见 docs/07 [R12]）：该仿射派生的种子是
+ * 同一条 splitmix64 状态序列上的等距点，各流填态字互为同一输出流的
+ * 等距平移窗口——结构化相关，而非独立流。NumPy 并行随机数文档把
+ * root_seed+worker_id 式派生明列为 UNSAFE（多轮批量扫参时不同根种子
+ * 的 worker 种子集可重叠）。改为 SeedSequence 式哈希派生会使全部既有
+ * 位级结果失效（违反 AGENTS.md 可复现性红线与已冻结数字），故维持
+ * 现状，留待主版本变更时再议。乘法式（乘数约 1.14e19）下实际种子
+ * 碰撞需 |Δseed|=K·|Δstream|，现实参数范围内不可达；缺陷在相关性
+ * 而非碰撞。 */
 static inline void pso_rng_seed_stream(pso_rng_t *r, uint64_t base_seed,
                                        uint64_t stream_id)
 {
