@@ -11,6 +11,7 @@ CliDiagnosticsTests（不受 /dev/full 守卫约束，Windows 也实跑）。
 from __future__ import annotations
 
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -20,6 +21,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DEV_FULL = Path("/dev/full")
+
+
+def optional_built(target: str) -> Path | None:
+    """查找可选二进制：找不到返回 None（不触发 PSO_TEST_BUILD_DIR 硬失败）。
+
+    用于只在 MPI 构建里存在的目标：无 MPI 配置下 io_failure_paths 仍会
+    注册，这些用例应按"目标不存在"跳过，而不是让整个套件变红。
+    """
+    override = os.environ.get("PSO_TEST_BUILD_DIR")
+    directories = ([Path(override)] if override
+                   else [ROOT / "build-warn", ROOT / "build"])
+    for directory in directories:
+        for name in (target, target + ".exe"):
+            candidate = directory / name
+            if candidate.is_file():
+                return candidate
+    return None
 
 
 def built(target: str) -> Path | None:
@@ -83,6 +101,60 @@ class WriteFailureTests(unittest.TestCase):
                                   stderr=subprocess.PIPE, text=True)
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("cannot write result line", proc.stderr)
+
+
+    def test_mpi_history_write_failure_exits_nonzero(self) -> None:
+        # §4.3：串行用例覆盖共享 reporter 的写错误，但 MPI 入口的
+        # history 失败路径（rank 0 写失败 → 集体 Abort）此前无任何回归。
+        # /dev/full 在 R1 修复后读写安全（失败即保留原路径，不删除）。
+        mpiexec = shutil.which("mpiexec") or shutil.which("mpiexec.exe")
+        if mpiexec is None:
+            self.skipTest("mpiexec not available")
+        for binary in ("pso_mpi_ms", "pso_mpi_island"):
+            exe = optional_built(binary)
+            if exe is None:
+                self.skipTest(f"{binary} not built (MPI disabled?)")
+            with self.subTest(binary=binary):
+                before = DEV_FULL.stat()
+                proc = subprocess.run(
+                    [mpiexec, "-n", "2", str(exe), *ARGS,
+                     "--history", str(DEV_FULL)],
+                    capture_output=True, text=True, encoding="utf-8",
+                    errors="replace", timeout=60)
+                self.assertNotEqual(proc.returncode, 0)
+                self.assertIn("cannot", proc.stderr)
+                self.assertIn("history file", proc.stderr)
+                after = DEV_FULL.stat()
+                self.assertTrue(stat.S_ISCHR(after.st_mode), "/dev/full 被删除")
+                self.assertEqual(after.st_rdev, before.st_rdev)
+
+
+class HistoryOpenFailureTests(unittest.TestCase):
+    """打开失败不得删除既有文件（R1 不变量的跨平台回归，§4.3）。
+
+    只读文件让 fopen("w") 在 Windows（只读属性）与 Linux 非 root
+    （EACCES）下都确定性失败，恰好覆盖"history == NULL"分支：
+    rc 非零、诊断可读、原文件内容一字不差。
+    """
+
+    def test_readonly_history_target_is_preserved(self) -> None:
+        exe = built("pso_serial")
+        if exe is None:
+            self.skipTest("pso_serial not built yet")
+        with tempfile.TemporaryDirectory() as directory:
+            sidecar = Path(directory) / "keep.history"
+            sidecar.write_text("keep-me" + chr(10), encoding="utf-8")
+            os.chmod(sidecar, 0o444)
+            try:
+                proc = subprocess.run(
+                    [str(exe), *ARGS, "--history", str(sidecar)],
+                    capture_output=True, text=True, encoding="utf-8",
+                    errors="replace", timeout=30)
+            finally:
+                os.chmod(sidecar, 0o644)
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("cannot open history file", proc.stderr)
+            self.assertEqual(sidecar.read_text(encoding="utf-8"), "keep-me" + chr(10))
 
 
 class CliDiagnosticsTests(unittest.TestCase):
@@ -153,9 +225,11 @@ class NoSidecarDeletionTests(unittest.TestCase):
     def test_entrypoints_do_not_delete_history_paths(self) -> None:
         for name in ("main_serial.c", "main_mpi_ms.c", "main_mpi_island.c"):
             text = (ROOT / "src" / name).read_text(encoding="utf-8")
-            self.assertNotIn(
-                "remove(", text,
-                f"{name} 重新引入了按路径删除；R1 修复禁止删除用户路径")
+            for api in ("remove(", "unlink(", "DeleteFileA(", "DeleteFileW("):
+                self.assertNotIn(
+                    api, text,
+                    f"{name} 重新引入了按路径删除（{api}）；"
+                    "R1 修复禁止删除用户路径")
 
 
 if __name__ == "__main__":

@@ -493,6 +493,25 @@ if(BUILD_TESTING)
             PASS_REGULAR_EXPRESSION "record=result schema=pso_v1 implementation=mpi-island function=sphere particles=10 dim=2 max_evals=40 max_iters=1000 seed=3 boundary=reflect dynamics=constriction target=0 lower=-2\\.0000000000000001e\\+154 upper=2\\.0000000000000001e\\+154 chi=0.72984000000000004 c1=1.4961800000000001 c2=1.4961800000000001 vmax_ratio=0.20000000000000001 inertia_start=0.90000000000000002 inertia_end=0.40000000000000002 ranks=4 threads=${PSO_TEST_THREADS} migration_interval=1 iterations=3 evals=40 best=2\\.4444982668108198e\\+305 success=0 fes_to_target=40 stop_reason=evaluation_budget stop_on_target=1 timing_scope=solver elapsed_max_s=[0-9]"
             TIMEOUT 20 ENVIRONMENT "OMP_NUM_THREADS=2;OMP_DYNAMIC=FALSE" PROCESSORS 8)
 
+        # 非整数倍预算的失败轮口径钉子（第三轮审计 §4.2）：既有 MPI 金标
+        # 预算全是粒子数整数倍，evals 与 max_evals 同值，无法区分
+        # fes_to_target 用的是"配置预算"还是"实际评估数"。此处
+        # particles=8 / max-evals=33 → 实跑 32、失败标记必须是 33。
+        pso_add_gate_test(mpi_data_failure_fes_budget COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2
+                 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:pso_mpi_ms>
+                 --function sphere --particles 8 --dim 2 --max-evals 33
+                 --target 0 --seed 7 --no-early-stop ${MPIEXEC_POSTFLAGS})
+        set_tests_properties(mpi_data_failure_fes_budget PROPERTIES
+            PASS_REGULAR_EXPRESSION "implementation=mpi-data-parallel .*iterations=3 evals=32 .*success=0 fes_to_target=33 stop_reason=evaluation_budget"
+            TIMEOUT 20 ENVIRONMENT "OMP_NUM_THREADS=2;OMP_DYNAMIC=FALSE" PROCESSORS 4)
+        pso_add_gate_test(mpi_island_failure_fes_budget COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2
+                 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:pso_mpi_island>
+                 --function sphere --particles 8 --dim 2 --max-evals 33
+                 --target 0 --seed 7 --no-early-stop ${MPIEXEC_POSTFLAGS})
+        set_tests_properties(mpi_island_failure_fes_budget PROPERTIES
+            PASS_REGULAR_EXPRESSION "implementation=mpi-island .*iterations=3 evals=32 .*success=0 fes_to_target=33 stop_reason=evaluation_budget"
+            TIMEOUT 20 ENVIRONMENT "OMP_NUM_THREADS=2;OMP_DYNAMIC=FALSE" PROCESSORS 4)
+
         pso_add_gate_test(mpi_help_mode COMMAND $<TARGET_FILE:pso_mpi_ms> --help)
         set_tests_properties(mpi_help_mode PROPERTIES
             PASS_REGULAR_EXPRESSION "MPI mode: total particles are divided across ranks")

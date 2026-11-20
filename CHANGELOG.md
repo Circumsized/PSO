@@ -17,8 +17,12 @@
 - 质量门禁：CTest 45 项（数值金标准、MPI 迁移金标、退出码包装判据、
   sanitizer 硬失败、OpenMP 生效断言）与 Python 175 项单测；CI 覆盖
   Linux/Windows/Python 三作业。
-- 已登记延后项：MPI 余数预算钉子与 MPI 写失败回归（需 Linux CI 绿灯），
-  见 `docs/03` 的复验记录。
+- 第三轮审计遗留项的收尾：`mpi_data_failure_fes_budget` /
+  `mpi_island_failure_fes_budget` 补齐非整数倍预算下的失败轮口径钉子
+  （`evals=32 fes_to_target=33`）；`test_io_failures` 增加 MPI 两入口的
+  `/dev/full` 写失败哨兵与跨平台"只读 history 目标打开失败不被删除"用例，
+  源码哨兵扩展到 `unlink(`/`DeleteFileA(`/`DeleteFileW(`（Linux 侧由 CI 实跑）。
+  CTest 45→47，Python 175→178。
 - 2026-11-20 GitHub Actions 四作业（Windows MS-MPI / Linux Debug+ASan+UBSan /
   Linux Release / Python）首次全绿（run 44653870418）：MS-MPI 资产钉定 v10.1.1、
   OpenMPI 4-rank 测试加 `--oversubscribe`、manifest 主机探测在 runner 上降级不中断。
