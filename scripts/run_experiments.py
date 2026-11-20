@@ -60,6 +60,10 @@ class Executables:
     mpi_ms: Path
     mpi_island: Path
     mpiexec: str
+    # mpiexec --version 的探测结果（可能为 None）；experiment_command 据此
+    # 判别 OpenMPI 与 MS-MPI 以决定 MPI 启动旗标。由 main() 从
+    # executables_metadata 的探测结果一次性回填，见该处注释。
+    mpiexec_version: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -217,6 +221,20 @@ def experiment_command(experiment: Experiment, seed: int,
     command: list[str] = []
     if experiment.implementation != "serial":
         command.extend((executables.mpiexec, "-n", str(experiment.ranks)))
+        # 审阅确认项 #5：pin=False 的「未绑核对照」必须跨 MPI 实现同构。
+        # OpenMPI 自 1.8 起默认绑核（np<=2 绑 core、np>2 绑 socket），
+        # pin=False 时不显式 --bind-to none 会静默绑核、使「未绑核对照」
+        # 失真；MS-MPI 不认这两个旗标，靠 command_environment 的
+        # MPIEXEC_AFFINITY=0 关闭绑核（已实测有效，不动该环境变量）。
+        # 版本探测失败/未知（None/空）时保守按 MS-MPI 现状处理。
+        version = executables.mpiexec_version or ""
+        if "Open MPI" in version or "OpenRTE" in version:
+            # OpenMPI 在槽位不足的 runner 上会拒绝 -n N（CI 常见 2 物理
+            # 核跑 4 rank），追加 --oversubscribe，与 CMakeLists.txt 的
+            # 版本串判别（Open MPI|OpenRTE）保持一致。
+            command.append("--oversubscribe")
+            if not pin:
+                command.extend(("--bind-to", "none"))
     command.extend((
         str(executable),
         "--function", experiment.function,
@@ -368,11 +386,12 @@ def write_manifest_atomic(path: Path, manifest: dict, attempts: int = 5) -> None
 
 
 def _platform_text() -> str:
-    """manifest 的主机平台串，探测失败时降级为 sys.platform。
+    """manifest 的主机平台串，探测异常时降级为 sys.platform。
 
-    platform.platform() 在部分环境（如 GitHub runner 的 Python 3.12）会因
-    platform.processor() 的子进程返回空而抛 AttributeError——主机信息只是
-    溯源注记，不能因此中断整份实验计划。
+    防御性兜底：processor 探测异常时 platform.processor() 内部对失败的
+    子进程退化为空串、并不因此抛错；此处的 try/except 仍保留，用于兜住
+    探测子进程本身可能抛出的残余异常（如 OSError），使主机信息这一溯源
+    注记不会中断整份实验计划。
     """
     try:
         return platform.platform()
@@ -524,6 +543,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "既有 manifest 记录真实执行；覆盖会丢失溯源证据。请使用新的 "
                 "--output-dir，或显式 --execute --append 走已登记的追加重跑"
                 f"流程: {manifest_path}")
+    executable_metadata = executables_metadata(executables)
+    # mpiexec 版本串决定 MPI 启动旗标（OpenMPI 需 --oversubscribe、pin=False
+    # 另加 --bind-to none，机理见 experiment_command）。探测失败/未知时
+    # version 为 None，按 MS-MPI 现状处理。此处只探测一次，直接复用即将
+    # 写入 manifest 的探测结果，不重复调用 mpiexec --version。
+    executables = dataclasses.replace(
+        executables,
+        mpiexec_version=executable_metadata["mpiexec"].get("version"))
     manifest = {
         "schema": "pso_experiments_v1",
         "created_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -534,7 +561,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "python": sys.version,
         },
         "configuration": _manifest_config(args, config),
-        "executables": executables_metadata(executables),
+        "executables": executable_metadata,
         "commands": [],
     }
 

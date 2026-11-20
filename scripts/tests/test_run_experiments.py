@@ -115,6 +115,58 @@ class RunExperimentsTests(unittest.TestCase):
                     "MPIEXEC_AFFINITY": "0",
                 })
 
+    def test_openmpi_version_adds_oversubscribe_and_bind_to_none(self) -> None:
+        # 审阅确认项 #5：OpenMPI 默认绑核会让 pin=False 的「未绑核对照」
+        # 静默失真，需显式 --bind-to none 恢复与 MS-MPI 的同构语义；
+        # --oversubscribe 与 CMakeLists.txt 的 Open MPI|OpenRTE 判别一致。
+        experiment = runner.Experiment(
+            "strong", "mpi-island", "sphere", 120, 8, 1000,
+            4, 3, "reflect", "constriction", 0)
+        for version in ("mpiexec (OpenRTE) 4.1.4",
+                        "mpiexec (Open MPI) 5.0.3"):
+            executables = runner.Executables(
+                Path("build/pso_serial"), Path("build/pso_mpi_ms"),
+                Path("build/pso_mpi_island"), "mpiexec",
+                mpiexec_version=version)
+            with self.subTest(version=version):
+                unbound = runner.experiment_command(
+                    experiment, 1, executables, pin=False)
+                bound = runner.experiment_command(
+                    experiment, 1, executables, pin=True)
+                # 旗标落在 -n <ranks> 之后、求解器路径之前
+                self.assertEqual(
+                    unbound[:6],
+                    ["mpiexec", "-n", "4", "--oversubscribe",
+                     "--bind-to", "none"])
+                # pin=True 只加 --oversubscribe，不再强制 --bind-to none
+                self.assertEqual(
+                    bound[:4],
+                    ["mpiexec", "-n", "4", "--oversubscribe"])
+                self.assertNotIn("--bind-to", bound)
+
+    def test_msmpi_or_unknown_version_keeps_msmpi_semantics(self) -> None:
+        # MS-MPI/未知版本：命令不含 OpenMPI 专属旗标，靠 command_environment
+        # 的 MPIEXEC_AFFINITY=0 关闭绑核（已实测有效，不动该环境变量）。
+        experiment = runner.Experiment(
+            "strong", "mpi-ms", "sphere", 120, 8, 1000,
+            4, 3, "reflect", "constriction", 0)
+        for version in (None, "", "mpiexec (MPICH) 4.1"):
+            executables = runner.Executables(
+                Path("build/pso_serial"), Path("build/pso_mpi_ms"),
+                Path("build/pso_mpi_island"), "mpiexec",
+                mpiexec_version=version)
+            with self.subTest(version=version):
+                command = runner.experiment_command(
+                    experiment, 1, executables, pin=False)
+                self.assertNotIn("--oversubscribe", command)
+                self.assertNotIn("--bind-to", command)
+                self.assertEqual(
+                    command[:4],
+                    ["mpiexec", "-n", "4", str(Path("build/pso_mpi_ms"))])
+                self.assertEqual(
+                    runner.command_environment(experiment)["MPIEXEC_AFFINITY"],
+                    "0")
+
     def test_process_environment_removes_inherited_tuning(self) -> None:
         experiment = runner.Experiment(
             "strong", "mpi-ms", "sphere", 120, 8, 1000,
@@ -499,9 +551,9 @@ class RunExperimentsTests(unittest.TestCase):
 
 
     def test_manifest_survives_platform_probe_failure(self) -> None:
-        # platform.platform() 在部分环境（GH runner 的 Python 3.12）会因
-        # platform.processor() 的子进程返回空而抛 AttributeError；manifest
-        # 的主机信息不能因此中断整个实验计划。
+        # 防御性兜底：platform.platform() 探测主机信息时可能抛异常（如
+        # processor 探测子进程的 OSError）；manifest 的主机信息只是溯源
+        # 注记，不能因此中断整个实验计划。
         with tempfile.TemporaryDirectory() as directory:
             output_dir = Path(directory)
             with mock.patch.object(runner.platform, "platform",
