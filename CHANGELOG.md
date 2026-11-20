@@ -24,7 +24,8 @@
   `--bind-to none`（恢复与 MS-MPI `MPIEXEC_AFFINITY=0` 同构的「不绑核」
   语义，OpenMPI 自 1.8 起默认绑核曾使 Linux pin=false 对照静默失真）；
   MS-MPI/未知版本维持现状。版本探测结果一次性回填，不重复调用。
-  `_platform_text` docstring 机理描述修正。
+  `_platform_text` docstring 机理描述修正。Python +2（OpenMPI/MS-MPI
+  分支用例）。
 - `plot_results.py --manifest-root` 严格路径补两类硬失败：结果行缺
   pso_v1 钉住字段（CONFIG_FIELDS 任一缺失，此前静默产生空单元格并独立
   成组）；`max_evals`/`evals` 与绑定命令 `--max-evals` 的预算一致性
@@ -48,8 +49,8 @@
 - 测试加固：新增 `serial_help_mode` CTest（47→48 项）；`inject_migrant`
   拒绝路径直断言、Ackley 非零探针与 `from_name(NULL)` 分支、CLI 负例、
   ctest_gate 退出码归一化与超时用例、analyze_speedups mode 拒绝用例。
-  Python 182→186。金标正则与 MPI 钉子逐位不变（全量重建零警告，
-  CTest 48/48、Python 186 全绿）。
+  Python 184→188。金标正则与 MPI 钉子逐位不变（全量重建零警告，
+  CTest 48/48、Python 188 全绿）。
 
 ## [1.0.0] - 2026-11-19
 
