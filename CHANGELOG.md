@@ -103,6 +103,10 @@
   快速开始 PSO 主循环流程图（Mermaid）与真实收敛曲线
   （`docs/figures/convergence-demo.png`，来自真实命令的开发机单次运行，
   仅说明格式）、docs/02 §3.3 环岛迁移拓扑图（Mermaid）。
+- README 文档节按主流开源项目（Linux kernel README、NumPy、Redis）的
+  模式最终定稿：去掉 Diátaxis 分类学说明段与「类型」标签列，改为
+  「一行一文档 + 一句话说明」的链接清单，用户/贡献者两组保留——类型
+  分组属于文档站首页，不属于 README。
 
 ## [1.0.0] - 2026-11-19
 
