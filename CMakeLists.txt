@@ -78,6 +78,18 @@ if(PSO_ENABLE_MPI)
     endif()
 endif()
 
+# OpenMPI 在槽位不足的 runner 上会拒绝 -n 4（CI runner 常见 2 物理核 ×2
+# 线程，而本项目有 4-rank 金标准与环迁移测试）。只对 Open MPI 追加
+# --oversubscribe：MPICH/MS-MPI 不认这个旗标，乱加会直接报错。
+if(PSO_ENABLE_MPI AND MPIEXEC_EXECUTABLE)
+    execute_process(COMMAND "${MPIEXEC_EXECUTABLE}" --version
+        OUTPUT_VARIABLE PSO_MPIEXEC_VERSION
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(PSO_MPIEXEC_VERSION MATCHES "Open MPI")
+        set(MPIEXEC_PREFLAGS "--oversubscribe")
+    endif()
+endif()
+
 # Sanitizer 同样是全项目标准：挂在 pso_core 上时 pso_env_probe（只链
 # pso_mpi）与 test_rng（不链 pso_core）会整对目标逃过 ASan/UBSan。
 # 探测必须在任何 target 创建之前完成，否则 add_compile_options 不生效。

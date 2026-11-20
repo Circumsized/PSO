@@ -367,6 +367,19 @@ def write_manifest_atomic(path: Path, manifest: dict, attempts: int = 5) -> None
             time.sleep(0.2 * (attempt + 1))
 
 
+def _platform_text() -> str:
+    """manifest 的主机平台串，探测失败时降级为 sys.platform。
+
+    platform.platform() 在部分环境（如 GitHub runner 的 Python 3.12）会因
+    platform.processor() 的子进程返回空而抛 AttributeError——主机信息只是
+    溯源注记，不能因此中断整份实验计划。
+    """
+    try:
+        return platform.platform()
+    except (AttributeError, OSError):
+        return sys.platform
+
+
 def _positive(value: str) -> int:
     parsed = int(value)
     if parsed <= 0:
@@ -517,7 +530,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "dry_run": not args.execute,
         "log_policy": "append" if args.append else "fail-if-nonempty",
         "host": {
-            "platform": platform.platform(),
+            "platform": _platform_text(),
             "python": sys.version,
         },
         "configuration": _manifest_config(args, config),

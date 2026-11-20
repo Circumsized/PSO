@@ -498,5 +498,21 @@ class RunExperimentsTests(unittest.TestCase):
                              "{not json")
 
 
+    def test_manifest_survives_platform_probe_failure(self) -> None:
+        # platform.platform() 在部分环境（GH runner 的 Python 3.12）会因
+        # platform.processor() 的子进程返回空而抛 AttributeError；manifest
+        # 的主机信息不能因此中断整个实验计划。
+        with tempfile.TemporaryDirectory() as directory:
+            output_dir = Path(directory)
+            with mock.patch.object(runner.platform, "platform",
+                                   side_effect=AttributeError("no uname")):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(
+                        runner.main(self._baseline_args(output_dir)), 0)
+            manifest = json.loads(
+                (output_dir / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["host"]["platform"], sys.platform)
+
+
 if __name__ == "__main__":
     unittest.main()

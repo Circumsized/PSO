@@ -55,10 +55,10 @@ jobs:
       - name: Install MS-MPI
         shell: pwsh
         run: |
-          $msmpi = 'https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.2/msmpisdk.msi'
-          $msmpiRuntime = 'https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.2/msmpisetup.exe'
-          curl -L -o msmpisdk.msi $msmpi
-          curl -L -o msmpisetup.exe $msmpiRuntime
+          $msmpi = 'https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.1/msmpisdk.msi'
+          $msmpiRuntime = 'https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.1/msmpisetup.exe'
+          curl -fL -o msmpisdk.msi $msmpi
+          curl -fL -o msmpisetup.exe $msmpiRuntime
           # Start-Process -Wait 不传播子进程退出码，必须 -PassThru 后读取
           # ExitCode，否则 MSI 静默失败会让整个作业在无 MPI 覆盖下变绿。
           $sdk = Start-Process msiexec.exe -ArgumentList '/quiet /i msmpisdk.msi' -Wait -PassThru
