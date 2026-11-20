@@ -11,8 +11,8 @@
 | 可执行文件 | 执行方式 | 适用任务 |
 |---|---|---|
 | `pso_serial` | 单进程；可使用 OpenMP | 建立基线、检查参数、调试算法。 |
-| `pso_mpi_ms` | MPI 全局数据并行；各 rank 使用全局最优位置 | 比较同一算法在不同进程数下的执行时间。 |
-| `pso_mpi_island` | MPI 单向环岛模型；各 rank 使用本岛最优位置 | 研究分岛、周期迁移及时间与解质量的关系。 |
+| `pso_mpi_ms` | MPI 全局数据并行；各 rank 共享全局 social best（社会最优位置） | 比较同一算法在不同进程数下的执行时间。 |
+| `pso_mpi_island` | MPI 单向环岛模型；各 rank 使用本岛 social best | 研究分岛、周期迁移及时间与解质量的关系。 |
 
 `pso_mpi_ms` 是可执行文件名；其结果中的实现名是 `mpi-data-parallel`。当前实现使用全局归约与广播。
 

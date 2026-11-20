@@ -107,6 +107,21 @@
   模式最终定稿：去掉 Diátaxis 分类学说明段与「类型」标签列，改为
   「一行一文档 + 一句话说明」的链接清单，用户/贡献者两组保留——类型
   分组属于文档站首页，不属于 README。
+- 文档打磨轮（专业技能流程：writing-core 语言规范扫描 + doc-coauthoring
+  读者测试——两个无上下文代理分别扮演学习者通读 docs/01、使用者通读
+  docs/04，报告 17 个缺口，全部修复）：docs/01 修复复现声明与墙钟计时的
+  自相矛盾（排除 elapsed_max_s 并补自验引导）、「83 轮 vs iterations=82」
+  差一解释、fes_to_target 未达标口径与 --no-early-stop 区分、threads/ranks
+  白话解释、无 MPI 构建方式（-DPSO_ENABLE_MPI=OFF 与自动降级）、mpiexec
+  路径的 Git Bash/PowerShell 说明、chi/c1/c2 与速度三部分概念挂钩、跨配置
+  计时对比改为不误导表述、「不需要 MPI 背景」声明与 §4 内容对齐（补 rank
+  最小概念）；docs/04 将 4.2/4.4 组装为完整统计工作流（30 seed 收集 +
+  analyze_stats 实测命令）、4.3 修正 analyze_convergence 无命令行入口的空
+  指引（改 summarize_convergence/plot_results 并定义 manifest）、4.5 补迁移
+  周期选择依据、故障表补 success=0 诊断行与 issue 渠道、参数表补
+  --lower/--upper、新增冒烟建议、术语表补 rank/manifest/vmax_ratio、原则 2
+  措辞校正；README 入口表对齐 docs/07 术语表（social best）。analyze_stats
+  工作流命令已实测跑通。
 
 ## [1.0.0] - 2026-11-19
 
