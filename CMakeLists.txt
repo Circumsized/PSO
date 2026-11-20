@@ -85,9 +85,12 @@ if(PSO_ENABLE_MPI AND MPIEXEC_EXECUTABLE)
     execute_process(COMMAND "${MPIEXEC_EXECUTABLE}" --version
         OUTPUT_VARIABLE PSO_MPIEXEC_VERSION
         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(PSO_MPIEXEC_VERSION MATCHES "Open MPI")
+    # Open MPI 的 mpiexec --version 输出形如 "mpiexec (OpenRTE) 4.1.x"，
+    # 不含字面 "Open MPI"；两种写法都要命中。
+    if(PSO_MPIEXEC_VERSION MATCHES "Open MPI|OpenRTE")
         set(MPIEXEC_PREFLAGS "--oversubscribe")
     endif()
+    message(STATUS "mpiexec preflags: '${MPIEXEC_PREFLAGS}'")
 endif()
 
 # Sanitizer 同样是全项目标准：挂在 pso_core 上时 pso_env_probe（只链

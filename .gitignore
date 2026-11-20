@@ -42,3 +42,5 @@ Thumbs.db
 
 # 本地工具会话产物（审阅期间登记，防误提交）
 /.qoder-credits/
+# 本地 CI 失败日志抓取（审阅用）
+/ci-fail-*.log
