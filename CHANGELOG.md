@@ -65,14 +65,17 @@
   与限制；docs/03 绑核段补官方依据引用；AGENTS.md 新增「修复与
   复审流程」节（批次化、计数级联、外部来源登记、独立复审、红线
   核查、门禁七条）。
-- 发布面整理（本地就绪，推送与 tag 待确认）：CITATION.cff 发布日期与
-  CHANGELOG [1.0.0] 对齐（2026-11-19）；CHANGELOG 1.0.0 分节改为标准
-  Added 结构、公开发布后记明确标注日期、补版本对比链接；LICENSE 恢复为
-  标准 MIT 正文（Scope notes 迁至 NOTICE.md，使 GitHub 许可证探测识别为
-  MIT，notes 内容未丢失）；README 增加 CI 状态徽章；CI 的
-  `actions/checkout@v4→v7`、`actions/setup-python@v5→v7`（已用 gh api
-  核实两者当前主版本均为 v7，消除 Node.js 20 弃用警告；实际生效由推送后
-  的 CI 实证）。
+- 发布面整理：CITATION.cff 发布日期与 CHANGELOG [1.0.0] 对齐
+  （2026-11-19）；CHANGELOG 1.0.0 分节改为标准 Added 结构、公开发布后记
+  明确标注日期、补版本对比链接；LICENSE 恢复为标准 MIT 正文（Scope notes
+  迁至 NOTICE.md，GitHub 许可证探测由 NOASSERTION 恢复为 MIT，notes 内容
+  未丢失）；README 增加 CI 状态徽章；CI 的 `actions/checkout@v4→v7`、
+  `actions/setup-python@v5→v7`（已用 gh api 核实两者当前主版本均为 v7）。
+  已推送并发版：main 推送 8 笔（CI run 44708960129 四作业全绿，实证
+  actions v7 生效）；v1.0.0 annotated tag 指向 e4f267f（CHANGELOG [1.0.0]
+  所述状态）并创建 GitHub release。本批次 8 笔修复列于本节 [未发布]，
+  将于下一版本（1.0.1）发布。备注：提交 2616d0e 的消息尾注「推送与 tag
+  待确认」为提交时状态，公开历史不可改，以本条为准。
 
 ## [1.0.0] - 2026-11-19
 

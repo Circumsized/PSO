@@ -59,4 +59,4 @@ python -m unittest discover -s scripts/tests -p 'test_*.py' -v
 4. 外部事实主张（工具链行为、文献结论）必须附官方来源并登记到 docs/07，含「用途」与「限制」两栏；查不到就写缺口，不用二手来源充当官方依据。
 5. 独立复审换人执行（发现者不复核）；每条将作为事实行动的发现先经独立复核或确定性检查证实，未证实的标注「未复核」。
 6. 红线核查每次必做：`results/formal-*` 只读（`git diff` 该路径为空）、求解轨迹不变（金标全绿）、不引入新依赖。
-7. 门禁：全量重建零警告 + `ctest -C Release` 全绿 + Python 全套件 + 六个 formal manifest root 只读实跑（`plot_results --manifest-root`，`--output` 到临时目录）。
+7. 门禁：全量重建零警告 + `ctest -C Release` 全绿 + Python 全套件 + 可解析的 formal manifest root 只读实跑（`plot_results --manifest-root`，`--output` 到临时目录；可解析的为 v3/v4/v5-pinned 三个，必须全部通过；另三个——formal-20260911 与 formal-plan-20260911-v2 为 dry-run 壳、formal-20260912-linux 为历史相对路径 manifest——改动前即不可解析，其拒绝行为不得退化）。
