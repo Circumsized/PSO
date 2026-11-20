@@ -3,6 +3,30 @@
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 约定。
 所有显著变更记录于此；性能数字仅在 `docs/03-基准测试报告.md` 声明的协议下采集。
 
+## [未发布]
+
+### Fixed
+
+- 文档与实现一致性修正（全量审阅确认项）：`docs/02`/`docs/05` 中收敛汇总
+  「忽略/跳过未登记 history」的表述改为实际的硬失败行为；`docs/03` 补披露
+  manifest 未记录 CPU 型号/编译器/OpenMP 版本、且 MS-MPI 的 mpiexec 不支持
+  `--version`（探测失败 version=null 已留档）；47 项 CTest 首次全绿的归属
+  由 run 44653870418/d91c4fc（该 run 实际执行 45 项）更正为
+  run 44655986835/e4f267f；冒烟溯源句改指 formal-* 归档；删除不存在的
+  「保留最后 30 对」去重机制描述；强扩展表补 sphere t2 两行（复算自
+  formal-20260912-v5-pinned）；`docs/05` §3.3 REINIT 速度按实际的 V_0
+  初始尺度表述；`docs/02` 补「无停滞检测/随机重启为有意设计」声明；
+  AGENTS.md 补记两个 MPI 可选二进制在 PSO_TEST_BUILD_DIR 注入时缺失即
+  skip 的豁免。
+- `plot_results.py --manifest-root` 严格路径补两类硬失败：结果行缺
+  pso_v1 钉住字段（CONFIG_FIELDS 任一缺失，此前静默产生空单元格并独立
+  成组）；`max_evals`/`evals` 与绑定命令 `--max-evals` 的预算一致性
+  （固定预算须结束于完整一代边界，`stop_on_target=1` 的合法早停放行）。
+  Python 178→182。六个 formal manifest root 只读实跑回归：可解析的
+  v3/v4/v5-pinned 全部通过、无误伤（formal-20260911 与
+  formal-plan-20260911-v2 为 dry-run 壳、formal-20260912-linux 为历史
+  相对路径 manifest，改动前即不可解析）。
+
 ## [1.0.0] - 2026-11-19
 
 ### 首次公开发布
@@ -24,5 +48,7 @@
   源码哨兵扩展到 `unlink(`/`DeleteFileA(`/`DeleteFileW(`（Linux 侧由 CI 实跑）。
   CTest 45→47，Python 175→178。
 - 2026-11-20 GitHub Actions 四作业（Windows MS-MPI / Linux Debug+ASan+UBSan /
-  Linux Release / Python）首次全绿（run 44653870418）：MS-MPI 资产钉定 v10.1.1、
-  OpenMPI 4-rank 测试加 `--oversubscribe`、manifest 主机探测在 runner 上降级不中断。
+  Linux Release / Python）首次全绿（run 44653870418，当时套件 45 项；
+  CTest 45→47 后的首次全绿为 run 44655986835，提交 e4f267f）：MS-MPI 资产钉定
+  v10.1.1、OpenMPI 4-rank 测试加 `--oversubscribe`、manifest 主机探测在
+  runner 上降级不中断。

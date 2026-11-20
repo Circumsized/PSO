@@ -135,6 +135,54 @@ def parse_log_strict(path: Path, expected_results: int, *,
     return rows
 
 
+_MAX_EVALS_OPTION = re.compile(r"(?:^|\s)--max-evals(?:=|\s+)(\d+)")
+
+
+def _validate_pinned_fields(
+        log_path: Path, rows: list[dict[str, str]],
+        expected_commands: dict[int, str]) -> list[dict[str, str]]:
+    """钉住 pso_v1 字段集与预算一致性（仅 --manifest-root 严格路径）。
+
+    parse_log_strict 是三个消费者的共享核心，这里只加 plot 自身的契约：
+    缺 CONFIG_FIELDS 任一字段会在 summary 里静默产生空单元格并独立成组；
+    max_evals/evals 与绑定命令 --max-evals 矛盾曾同样被静默收下。
+    summarize_convergence 的身份/轨迹对账更严格，不经过本函数。"""
+    for index, row in enumerate(rows, start=1):
+        label = f"{log_path}: result {index} (seed {row.get('seed', '?')})"
+        missing = [field for field in CONFIG_FIELDS if not row.get(field)]
+        if missing:
+            raise ValueError(
+                f"{label}: 结果缺少 pso_v1 钉住字段: {' '.join(missing)}")
+        match = _MAX_EVALS_OPTION.search(
+            expected_commands.get(int(row["seed"]), ""))
+        if match is None or int(match.group(1)) <= 0:
+            continue
+        budget = int(match.group(1))
+        if row["max_evals"] != str(budget):
+            raise ValueError(
+                f"{label}: 结果 max_evals={row['max_evals']!r} "
+                f"与绑定命令 --max-evals {budget} 不一致")
+        particles_text = row["particles"]
+        evals_text = row.get("evals", "")
+        if not particles_text.isdigit() or not evals_text.isdigit():
+            raise ValueError(
+                f"{label}: particles/evals 必须是整数: "
+                f"{particles_text!r}/{evals_text!r}")
+        particles = int(particles_text)
+        if particles <= 0:
+            raise ValueError(f"{label}: particles 必须为正: {particles}")
+        evals = int(evals_text)
+        full_budget = budget // particles * particles
+        if row.get("stop_on_target") == "0":
+            if evals != full_budget:
+                raise ValueError(
+                    f"{label}: 固定预算应结束于 evals={full_budget}，实际 {evals}")
+        elif evals > full_budget:
+            raise ValueError(
+                f"{label}: evals={evals} 超出绑定预算 {full_budget}")
+    return rows
+
+
 def load_manifest_rows(root: Path) -> list[dict[str, str]]:
     """Load only complete manifests and logs contained by ``root``."""
     resolved_root = root.resolve()
@@ -203,9 +251,11 @@ def load_manifest_rows(root: Path) -> list[dict[str, str]]:
             loaded_logs.add(log_path)
             # seed→命令文本核验：日志里的 # command: 行必须与 manifest 记录
             # 一致，防止篡改命令行（含 --seed）后数据被静默接受。
-            rows.extend(parse_log_strict(
+            parsed = parse_log_strict(
                 log_path, expected_results,
-                expected_commands=expected_commands_by_log[log_path]))
+                expected_commands=expected_commands_by_log[log_path])
+            rows.extend(_validate_pinned_fields(
+                log_path, parsed, expected_commands_by_log[log_path]))
     return rows
 
 

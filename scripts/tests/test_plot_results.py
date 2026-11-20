@@ -16,12 +16,31 @@ import plot_results  # noqa: E402
 
 class PlotResultsTests(unittest.TestCase):
     @staticmethod
+    def _full_result(best: str = "0.5", elapsed: str = "0.25",
+                     seed: str = "1", **overrides: str) -> str:
+        """字段与顺序对齐 src/pso_report.c 的真实 pso_v1 输出行。"""
+        fields = {
+            "record": "result", "schema": "pso_v1",
+            "implementation": "serial", "function": "sphere",
+            "particles": "8", "dim": "2", "max_evals": "100000",
+            "max_iters": "1000", "seed": seed, "boundary": "reflect",
+            "dynamics": "constriction", "target": "1e-8", "lower": "-100",
+            "upper": "100", "chi": "1", "c1": "2", "c2": "2",
+            "vmax_ratio": "1", "inertia_start": "0.9", "inertia_end": "0.4",
+            "ranks": "1", "threads": "1", "migration_interval": "10",
+            "iterations": "2", "evals": "16", "best": best, "success": "1",
+            "fes_to_target": "16", "stop_reason": "target",
+            "stop_on_target": "1", "timing_scope": "solver",
+            "elapsed_max_s": elapsed,
+        }
+        fields.update(overrides)
+        return " ".join(f"{key}={value}" for key, value in fields.items()) + "\n"
+
+    @staticmethod
     def _result(best: str = "0.5", elapsed: str = "0.25",
                 seed: str = "1") -> str:
-        return (
-            "record=result schema=pso_v1 implementation=serial function=sphere "
-            "particles=8 dim=2 seed=" + seed + " best=" + best
-            + " success=1 fes_to_target=16 elapsed_max_s=" + elapsed + "\n")
+        return PlotResultsTests._full_result(best=best, elapsed=elapsed,
+                                             seed=seed)
 
     @staticmethod
     def _write_manifest(root: Path, logs: list[Path], *, dry_run: bool = False,
@@ -266,6 +285,72 @@ class PlotResultsTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertTrue(output.is_file())
             self.assertIn("best_mean", output.read_text(encoding="utf-8"))
+
+    def test_strict_manifest_path_rejects_missing_pinned_field(self) -> None:
+        # 缺钉住字段会在 summary 里静默产生空单元格并独立成组（审阅确认
+        # 项 #6），--manifest-root 严格路径必须硬失败。
+        for field in ("timing_scope", "stop_on_target", "max_evals"):
+            with self.subTest(field=field), \
+                    tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                log = root / "run.log"
+                log.write_text(
+                    "# command: solver --seed 1\n"
+                    + self._result().replace(f" {field}=", " removed="),
+                    encoding="utf-8")
+                self._write_manifest(
+                    root, [log], command_texts=["solver --seed 1"])
+                with self.assertRaisesRegex(ValueError, "钉住字段"):
+                    plot_results.load_manifest_rows(root)
+
+    def test_strict_manifest_path_rejects_max_evals_tampering(self) -> None:
+        # 结果 max_evals 与绑定命令 --max-evals 不一致必须硬失败（审阅确认
+        # 项 #6；兄弟工具 summarize_convergence 早已同口径）。
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "run.log"
+            log.write_text(
+                "# command: solver --max-evals 100000 --seed 1\n"
+                + self._full_result(max_evals="99999"),
+                encoding="utf-8")
+            self._write_manifest(
+                root, [log],
+                command_texts=["solver --max-evals 100000 --seed 1"])
+            with self.assertRaisesRegex(ValueError, "max-evals"):
+                plot_results.load_manifest_rows(root)
+
+    def test_strict_manifest_path_rejects_fixed_budget_mismatch(self) -> None:
+        # stop_on_target=0 的固定预算必须结束于完整一代边界
+        # （--max-evals 100000 // particles 8 = 100000），evals=200 不可收。
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "run.log"
+            log.write_text(
+                "# command: solver --max-evals 100000 --seed 1\n"
+                + self._full_result(evals="200", stop_on_target="0",
+                                    success="0", fes_to_target="200",
+                                    stop_reason="evals"),
+                encoding="utf-8")
+            self._write_manifest(
+                root, [log],
+                command_texts=["solver --max-evals 100000 --seed 1"])
+            with self.assertRaisesRegex(ValueError, "固定预算"):
+                plot_results.load_manifest_rows(root)
+
+    def test_strict_manifest_path_accepts_legal_early_stop(self) -> None:
+        # stop_on_target=1 时 evals 可以小于完整预算（真实早停），必须放行。
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            log = root / "run.log"
+            log.write_text(
+                "# command: solver --max-evals 100000 --seed 1\n"
+                + self._full_result(evals="16"),
+                encoding="utf-8")
+            self._write_manifest(
+                root, [log],
+                command_texts=["solver --max-evals 100000 --seed 1"])
+            rows = plot_results.load_manifest_rows(root)
+        self.assertEqual(len(rows), 1)
 
     def test_summary_groups_by_complete_configuration(self) -> None:
         common = {
