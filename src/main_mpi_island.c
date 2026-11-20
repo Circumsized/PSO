@@ -71,13 +71,15 @@ int main(int argc, char **argv)
         fputs("MPI_Init_thread failed\n", stderr);
         return EXIT_FAILURE;
     }
-    rc = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-    if (mpi_check(rc, "MPI_Comm_set_errhandler", rank) != 0) {
+    /* rank 先取回：后续 mpi_check 的诊断才能带上真实 rank，而不是 -1。
+     * 两调用之间无依赖（rank 仅用于诊断输出）。 */
+    rc = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (mpi_check(rc, "MPI_Comm_rank", rank) != 0) {
         MPI_Abort(MPI_COMM_WORLD, rc);
         return EXIT_FAILURE;
     }
-    rc = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    if (mpi_check(rc, "MPI_Comm_rank", rank) != 0) {
+    rc = MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    if (mpi_check(rc, "MPI_Comm_set_errhandler", rank) != 0) {
         MPI_Abort(MPI_COMM_WORLD, rc);
         return EXIT_FAILURE;
     }

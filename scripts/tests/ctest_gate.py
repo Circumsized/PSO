@@ -7,7 +7,8 @@ CMake 的 PASS_REGULAR_EXPRESSION 会忽略进程退出码（官方文档明确�
 
 * 原样继承 stdin/stdout/stderr，字节级直通（供既有 PASS 正则继续匹配）；
 * 镜像子进程退出码；非零时额外打印 ``PsoTestGate:`` 哨兵，供 CMake 侧
-  FAIL_REGULAR_EXPRESSION 命中（双保险；与 PASS 冲突时 FAIL 恒胜）。
+  FAIL_REGULAR_EXPRESSION 命中（双保险；与 PASS 冲突时 FAIL 恒胜）；
+* 子进程超过 120s 未退出按超时硬失败（返回 1），不让 CTest 永久挂起。
 
 用法（CMake 侧由 pso_add_gate_test 生成）：
   python ctest_gate.py -- <求解器命令...>
@@ -16,6 +17,9 @@ from __future__ import annotations
 
 import subprocess
 import sys
+
+# 与 ci.yml 的 ctest --timeout 对齐：单个求解器跑满 120s 即视为卡死。
+CHILD_TIMEOUT_S = 120
 
 
 def main() -> int:
@@ -26,7 +30,11 @@ def main() -> int:
         print("PsoTestGate: 缺少子进程命令", file=sys.stderr)
         return 2
     try:
-        child = subprocess.run(argv)
+        child = subprocess.run(argv, timeout=CHILD_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        print(f"PsoTestGate: 子进程超过 {CHILD_TIMEOUT_S}s 未退出: {argv[0]}",
+              file=sys.stderr)
+        return 1
     except OSError as error:
         print(f"PsoTestGate: 无法启动子进程: {error}", file=sys.stderr)
         return 2

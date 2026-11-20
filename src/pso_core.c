@@ -420,15 +420,13 @@ int pso_swarm_inject_migrant(pso_swarm *swarm, const double *migrant_position,
 double pso_wall_time(void)
 {
 #ifdef _WIN32
-    static LARGE_INTEGER frequency;
-    static int initialized = 0;
+    LARGE_INTEGER frequency;
     LARGE_INTEGER counter;
-    if (!initialized) {
-        if (QueryPerformanceFrequency(&frequency) == 0) {
-            fputs("QueryPerformanceFrequency failed\n", stderr);
-            abort();
-        }
-        initialized = 1;
+    /* 不缓存 frequency：QueryPerformanceFrequency 是无锁廉价调用，
+     * 懒初始化的 static 状态会引入潜在数据竞争（多线程首次并发调用）。 */
+    if (QueryPerformanceFrequency(&frequency) == 0) {
+        fputs("QueryPerformanceFrequency failed\n", stderr);
+        abort();
     }
     if (QueryPerformanceCounter(&counter) == 0) {
         fputs("QueryPerformanceCounter failed\n", stderr);

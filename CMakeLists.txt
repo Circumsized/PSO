@@ -57,8 +57,8 @@ if(PSO_ENABLE_MPI)
         if(MS_MPI_INCLUDE_DIR AND MS_MPI_LIBRARY)
             target_include_directories(pso_mpi INTERFACE "${MS_MPI_INCLUDE_DIR}")
             # 第三方头不该被本项目的 -Wpedantic 审视：MS-MPI 的 mpi.h 用了
-            # __int64 等非 ISO 写法。target_include_directories(... SYSTEM)
-            # 需要 CMake 3.25，本仓下限是 3.20，故用属性写法。
+            # __int64 等非 ISO 写法。属性写法与 target_include_directories
+            # (... SYSTEM) 参数等效，且兼容更低版本 CMake。
             set_property(TARGET pso_mpi APPEND PROPERTY
                          INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${MS_MPI_INCLUDE_DIR}")
             target_link_libraries(pso_mpi INTERFACE "${MS_MPI_LIBRARY}")
@@ -134,6 +134,8 @@ if(PSO_ENABLE_SANITIZERS AND NOT MSVC)
     else()
         message(WARNING "PSO_ENABLE_SANITIZERS requested, but this compiler has no libasan/libubsan; sanitizers disabled")
     endif()
+elseif(PSO_ENABLE_SANITIZERS AND MSVC)
+    message(WARNING "PSO_ENABLE_SANITIZERS requested, but sanitizers are not supported by MSVC; ignored")
 endif()
 
 add_library(pso_core STATIC
@@ -307,6 +309,11 @@ if(BUILD_TESTING)
              --target 0 --seed 7 --no-early-stop)
     set_tests_properties(serial_failure_fes_budget PROPERTIES
         PASS_REGULAR_EXPRESSION "iterations=3 evals=32 .*success=0 fes_to_target=33 stop_reason=evaluation_budget stop_on_target=0")
+    # 串行入口 --help 冒烟，与 mpi_help_mode/island_help_mode 同构：
+    # 用法文本必须出现，退出码 0 由 ctest_gate.py 镜像校验。
+    pso_add_gate_test(serial_help_mode COMMAND $<TARGET_FILE:pso_serial> --help)
+    set_tests_properties(serial_help_mode PROPERTIES
+        PASS_REGULAR_EXPRESSION "Usage: .*options")
 
     # 数值金标准：可复现不变量的回归锚点。此前全库唯一的 best 钉值在
     # mpi_data_4rank_nondiv 上，串行与消融开关在 CI 中没有任何数值断言，
@@ -523,3 +530,6 @@ endif()
 
 message(STATUS "PSO_ENABLE_MPI=${PSO_ENABLE_MPI}")
 message(STATUS "OpenMP_C_FOUND=${OpenMP_C_FOUND}")
+# Linux 第二环境脚本据此断言 Python 套件真的注册进了 CTest（缺 python3 时
+# find_package 失败只会静默少跑十几个门禁）。
+message(STATUS "Python3_Interpreter_FOUND=${Python3_Interpreter_FOUND}")

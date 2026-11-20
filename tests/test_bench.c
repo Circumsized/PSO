@@ -75,6 +75,28 @@ int main(void)
         }
     }
 
+    {
+        /* Ackley 非零探针：x=0 处 Ackley 恒为 0，任何系数改动都被吸收，
+         * 之前的探针（ones/probe）都没有钉住它的系数。取每维 0.5：
+         * 标准 Ackley（a=20, b=0.2, c=2π）
+         *   f(x) = -a*exp(-b*sqrt(Σx²/d)) - exp(Σcos(c*x)/d) + a + e
+         * Σx² = 8*0.25 = 2 → sqrt(2/8) = 0.5；
+         * Σcos(2π*0.5) = 8*cos(π) = -8。
+         * 解析值 = -20*exp(-0.1) - exp(-1) + 20 + e = 4.2536540265684124，
+         * 与最优点 0 相差一个量级，系数漂移在其上可见。 */
+        const double half[8] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+        if (!close_relative(pso_bench_eval(PSO_FN_ACKLEY, half, 8),
+                            4.2536540265684124)) {
+            fputs("ackley coefficient drift\n", stderr);
+            failed = 1;
+        }
+        /* NULL 守卫分支（src/pso_bench.c from_name 开头）：不得解引用。 */
+        if (pso_bench_from_name(NULL) != PSO_FN_COUNT) {
+            fputs("from_name(NULL) bypassed the NULL guard\n", stderr);
+            failed = 1;
+        }
+    }
+
     if (pso_bench_from_name("not-a-function") != PSO_FN_COUNT) failed = 1;
     if (!isnan(pso_bench_eval(PSO_FN_SPHERE, NULL, 8))) failed = 1;
     if (!isnan(pso_bench_eval(PSO_FN_SPHERE, x, 0))) failed = 1;

@@ -33,6 +33,12 @@ fi
 OUT="$ROOT/results"
 mkdir -p "$OUT"
 
+# 冒烟链路只认 build/ 产物：缺任一可执行文件立刻失败，别把错误推迟成
+# 半份空日志（rm 已经先清掉了旧的 raw_*.log）。
+[[ -x "$SERIAL" ]] || { echo "缺少 $SERIAL；请先构建到 build/（cmake --build build --parallel）" >&2; exit 1; }
+[[ -x "$MS" ]] || { echo "缺少 $MS；请先构建到 build/（cmake --build build --parallel）" >&2; exit 1; }
+[[ -x "$ISLAND" ]] || { echo "缺少 $ISLAND；请先构建到 build/（cmake --build build --parallel）" >&2; exit 1; }
+
 rm -f "$OUT/raw_serial.log" "$OUT/raw_mpi_ms.log" "$OUT/raw_mpi_island.log"
 for ((run=0; run<RUNS; run++)); do
     seed=$((SEED_BASE + run))

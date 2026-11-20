@@ -44,8 +44,9 @@ typedef struct {
     int rng_count;
 } pso_swarm;
 
-/* Legacy initializer: particle i keeps the historical uint64_t stream mapping
- * stream_id * 1048576 + i (mod 2^64) over the full stream_id/count domain. */
+/* Legacy 初始化器：粒子 i 的流号为 namespace*1048576 + i（uint64_t 模
+ * 2^64 加法）。count >= 2^20 时粒子索引会溢出到下一个 namespace 窗口，
+ * 不同 namespace 的流因此碰撞；该 API 当前仅测试使用。 */
 int pso_swarm_init(pso_swarm *swarm, const pso_options *options,
                    int count, uint64_t base_seed, uint64_t stream_id);
 /* Range initializer: each particle is keyed by the semantic pair

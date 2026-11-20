@@ -62,8 +62,11 @@ def load_manifest_bindings(
                               "migration_intervals") if key not in config]
     if missing:
         raise SystemExit(f"manifest configuration 缺少键: {missing}")
-    if config.get("mode") not in ("all", "baseline", "strong"):
-        raise SystemExit("根 manifest 需包含 baseline/strong 套件")
+    # 速度比表要把 baseline 串行日志与 strong 扩展日志按 seed 配对，只有
+    # run_experiments 的 mode=all（各协议并集）才会同时留下两套日志；
+    # baseline/strong 单选模式下另一套必然缺席，必须拒绝。
+    if config.get("mode") != "all":
+        raise SystemExit("根 manifest 需使用 mode=all（baseline/strong 套件不会同时存在）")
     root_resolved = root.resolve()
     bindings: dict[Experiment, tuple[Path, dict[int, str]]] = {}
     for index, command in enumerate(commands):

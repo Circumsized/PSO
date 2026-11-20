@@ -3,7 +3,7 @@
 FROM gcc:13
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
-       cmake libopenmpi-dev openmpi-bin python3-minimal \
+       cmake libopenmpi-dev openmpi-bin python3 \
     && rm -rf /var/lib/apt/lists/*
 ENV OMPI_ALLOW_RUN_AS_ROOT=1 \
     OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \

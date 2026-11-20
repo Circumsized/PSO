@@ -129,9 +129,6 @@ int main(int argc, char **argv)
         pso_swarm_destroy(&swarm);
         return EXIT_FAILURE;
     }
-    if (!reached) {
-        fes_to_target = options.max_evals > UINT64_C(0) ? options.max_evals : evals;
-    }
     result = (pso_result_line){
         .implementation = "serial",
         .function = pso_bench_info(options.function)->name,

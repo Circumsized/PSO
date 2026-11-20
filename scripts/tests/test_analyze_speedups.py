@@ -274,6 +274,25 @@ class AnalyzeSpeedupsTests(unittest.TestCase):
                         ["--manifest-root", str(root), *arguments])
                 self.assertEqual(raised.exception.code, 2)
 
+    def test_partial_mode_manifest_is_rejected(self) -> None:
+        # 速度比表需要 baseline 与 strong 两套日志同处一个 root；run_experiments
+        # 的 mode 只能单选（all 才是并集），baseline/strong 套件不会同时存在，
+        # 故根 manifest 必须是 mode=all（见 build_experiment_matrix）。
+        for mode in ("baseline", "strong"):
+            with self.subTest(mode=mode), \
+                    tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                write_fixture(root)
+                manifest = json.loads(
+                    (root / "manifest.json").read_text(encoding="utf-8"))
+                manifest["configuration"]["mode"] = mode
+                (root / "manifest.json").write_text(
+                    json.dumps(manifest), encoding="utf-8")
+                with self.assertRaises(SystemExit) as raised:
+                    analyze_speedups.main(["--manifest-root", str(root),
+                                           "--iterations", "200"])
+                self.assertIn("mode=all", str(raised.exception))
+
     def test_unparsable_manifest_is_system_exit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

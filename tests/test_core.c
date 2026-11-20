@@ -658,6 +658,35 @@ int main(void)
         pso_swarm_destroy(&swarm);
         return 1;
     }
+
+    /* 更差/相等移民必须被拒，且最差槽位的粒子与适应度保持原样：
+     * 迁移只替换严格更差的槽位（src/pso_core.c 的 migrant_fit >= 最差
+     * pbest_fitness 即 return 0），否则环模型会把坏解写回岛屿。 */
+    {
+        const int worst = pso_swarm_worst_index(&swarm);
+        double keep_position[4];
+        double keep_fitness;
+        if (worst < 0) {
+            fputs("worst index unavailable after valid migrant\n", stderr);
+            pso_swarm_destroy(&swarm);
+            return 1;
+        }
+        memcpy(keep_position, &swarm.position[(size_t)worst * 4], sizeof(keep_position));
+        keep_fitness = swarm.pbest_fitness[worst];
+        if (pso_swarm_inject_migrant(&swarm, migrant, keep_fitness + 1.0) != 0 ||
+            pso_swarm_inject_migrant(&swarm, migrant, keep_fitness) != 0) {
+            fputs("worse or equal migrant was accepted\n", stderr);
+            pso_swarm_destroy(&swarm);
+            return 1;
+        }
+        if (swarm.pbest_fitness[worst] != keep_fitness ||
+            memcmp(&swarm.position[(size_t)worst * 4], keep_position,
+                   sizeof(keep_position)) != 0) {
+            fputs("rejected migrant mutated the worst slot\n", stderr);
+            pso_swarm_destroy(&swarm);
+            return 1;
+        }
+    }
     pso_swarm_destroy(&swarm);
 
     /* 同 seed 的结果必须与 OpenMP 线程数无关。 */

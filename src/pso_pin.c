@@ -124,7 +124,9 @@ int pso_pin_query_cores(pso_pin_core *cores, int capacity)
             break;
         }
         cores[num_cores].count = 0;
-        for (bit = 0; bit < 64; ++bit) {
+        /* 枚举位数与 ULONG_PTR 掩码的位宽一致：x64 仍是 64，32 位构建下
+         * 不会出现移位计数 >= 位宽的未定义行为。 */
+        for (bit = 0; bit < 8 * (int)sizeof(ULONG_PTR); ++bit) {
             ULONG_PTR bit_mask = ((ULONG_PTR)1) << bit;
             if (info[i].ProcessorMask & bit_mask) {
                 if (cores[num_cores].count < PSO_PIN_MAX_SIBLINGS) {

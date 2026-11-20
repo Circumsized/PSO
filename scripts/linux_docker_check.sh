@@ -21,15 +21,17 @@ cmake -S . -B build-sanitize \
     -DPSO_ENABLE_SANITIZERS=ON -DCMAKE_BUILD_TYPE=Debug \
     > configure-sanitize.log 2>&1 || { cat configure-sanitize.log; exit 1; }
 # FindMPI/FindOpenMP 失败只会降级 WARNING 并跳过目标，必须断言真的生效。
+# Python3 同理：缺解释器时 CTest 会静默少跑全部 Python 门禁套件。
 grep -q "PSO_ENABLE_MPI=ON" configure-sanitize.log || { echo "MPI 未生效"; cat configure-sanitize.log; exit 1; }
 grep -q "OpenMP_C_FOUND=TRUE" configure-sanitize.log || { echo "OpenMP 未生效"; cat configure-sanitize.log; exit 1; }
+grep -q "Python3_Interpreter_FOUND=TRUE" configure-sanitize.log || { echo "Python3 未生效"; cat configure-sanitize.log; exit 1; }
 cmake --build build-sanitize --parallel 4
 
 echo "== sanitizer CTest =="
 export OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 export ASAN_OPTIONS=detect_leaks=0
 export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
-ctest --test-dir build-sanitize --output-on-failure
+ctest --test-dir build-sanitize --output-on-failure --timeout 120
 
 echo "== release build (second environment) =="
 cmake -S . -B build-release \
@@ -38,9 +40,10 @@ cmake -S . -B build-release \
 # FindMPI/FindOpenMP 失败只会降级 WARNING 并跳过目标，必须断言真的生效。
 grep -q "PSO_ENABLE_MPI=ON" configure-release.log || { echo "MPI 未生效"; cat configure-release.log; exit 1; }
 grep -q "OpenMP_C_FOUND=TRUE" configure-release.log || { echo "OpenMP 未生效"; cat configure-release.log; exit 1; }
+grep -q "Python3_Interpreter_FOUND=TRUE" configure-release.log || { echo "Python3 未生效"; cat configure-release.log; exit 1; }
 cmake --build build-release --parallel 4
 
 echo "== release CTest =="
-ctest --test-dir build-release --output-on-failure
+ctest --test-dir build-release --output-on-failure --timeout 120
 
 echo "LINUX_CHECK_DONE"

@@ -46,8 +46,11 @@ def build_mpi_command(mpiexec: list[str], pre: list[str], post: list[str],
 
 
 def run(argv: list[str]) -> dict[str, str]:
-    proc = subprocess.run(argv, capture_output=True, text=True,
-                          encoding="utf-8", errors="replace")
+    try:
+        proc = subprocess.run(argv, capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=120)
+    except subprocess.TimeoutExpired:
+        fail(f"{' '.join(argv)} 超过 120s 未退出（求解器卡死）")
     if proc.returncode != 0:
         fail(f"{' '.join(argv)} exited {proc.returncode}: {proc.stderr.strip()}")
     for line in proc.stdout.splitlines():

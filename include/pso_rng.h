@@ -23,9 +23,12 @@ typedef struct {
     uint64_t s[4];
 } pso_rng_t;
 
+/* 循环左移。两个移位计数都掩到 0..63：k=0 时右移计数 (64-0)&63=0、
+ * k=64 时左移计数 64&63=0，任意 int k 都不会触发移位计数 >=64 的未定义
+ * 行为（调用点均为编译期常量，优化器会折叠，无运行时开销）。 */
 static inline uint64_t pso_rotl(const uint64_t x, int k)
 {
-    return (x << k) | (x >> (64 - k));
+    return (x << (k & 63)) | (x >> ((64 - k) & 63));
 }
 
 /* splitmix64：用于把一个 64 位种子扩展成 256 位状态，

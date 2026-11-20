@@ -62,6 +62,9 @@ int main(void)
                                       "--function", "sphere"};
     char *bounds_after_function[] = {"test", "--function", "sphere", "--lower", "-3",
                                      "--upper", "4"};
+    char *unknown_option[] = {"test", "--nope"};
+    char *zero_dim[] = {"test", "--dim", "0"};
+    char *negative_iters[] = {"test", "--max-iters", "-1"};
     pso_options options;
 
     if (!expect_parse_failure(3, negative_seed) ||
@@ -72,6 +75,14 @@ int main(void)
         !expect_parse_failure(7, blanked_negative_budget)) {
         fputs("invalid CLI value was accepted\n", stderr);
         fputs("空白前缀负号绕过无符号守卫\n", stderr);
+        return 1;
+    }
+    /* 负例：未知选项走 src/pso_cli.c 的 else 分支返回 -1；--dim 0 与
+     * --max-iters -1 解析成功但被随后的值域校验拒绝，同样返回 -1。 */
+    if (!expect_parse_failure(2, unknown_option) ||
+        !expect_parse_failure(3, zero_dim) ||
+        !expect_parse_failure(3, negative_iters)) {
+        fputs("未知选项或非正整数值被接受\n", stderr);
         return 1;
     }
     pso_options_init(&options);
@@ -99,7 +110,6 @@ int main(void)
     }
 
     {
-        pso_options direct = options;
         char *no_stop_args[] = {"test", "--no-early-stop"};
         char *bad_budget[] = {"test", "--particles", "8", "--max-evals", "4"};
         char *bounds_before_function[] = {"test", "--lower", "-2", "--upper", "3",
@@ -108,7 +118,6 @@ int main(void)
         char *huge_budget[] = {"test", "--particles", "1", "--max-evals",
                                huge_budget_text};
         pso_options parsed;
-        (void)direct;
         pso_options_init(&parsed);
         if (pso_parse_args(2, no_stop_args, &parsed) != 0 || parsed.stop_on_target) {
             fputs("--no-early-stop was not honored\n", stderr);

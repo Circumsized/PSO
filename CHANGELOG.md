@@ -18,6 +18,13 @@
   初始尺度表述；`docs/02` 补「无停滞检测/随机重启为有意设计」声明；
   AGENTS.md 补记两个 MPI 可选二进制在 PSO_TEST_BUILD_DIR 注入时缺失即
   skip 的豁免。
+- 采集工具绑核对称性修复（全量审阅确认项 #5）：`run_experiments.py`
+  的 `experiment_command` 按 mpiexec 版本串判别 MPI 种类——OpenMPI 系
+  （`Open MPI|OpenRTE`）追加 `--oversubscribe`，且 `pin=False` 时追加
+  `--bind-to none`（恢复与 MS-MPI `MPIEXEC_AFFINITY=0` 同构的「不绑核」
+  语义，OpenMPI 自 1.8 起默认绑核曾使 Linux pin=false 对照静默失真）；
+  MS-MPI/未知版本维持现状。版本探测结果一次性回填，不重复调用。
+  `_platform_text` docstring 机理描述修正。
 - `plot_results.py --manifest-root` 严格路径补两类硬失败：结果行缺
   pso_v1 钉住字段（CONFIG_FIELDS 任一缺失，此前静默产生空单元格并独立
   成组）；`max_evals`/`evals` 与绑定命令 `--max-evals` 的预算一致性
@@ -26,6 +33,23 @@
   v3/v4/v5-pinned 全部通过、无误伤（formal-20260911 与
   formal-plan-20260911-v2 为 dry-run 壳、formal-20260912-linux 为历史
   相对路径 manifest，改动前即不可解析）。
+
+### Changed
+
+- 代码卫生微批（全量审阅低优先级项，行为不变或仅改诊断）：删除
+  serial/mpi-ms 入口的 `fes_to_target` 死预赋值；`pso_rotl` 改移位计数
+  掩码形式消除潜在 UB；`pso_wall_time` 去掉 `QueryPerformanceFrequency`
+  懒初始化缓存；pin 核表枚举上界改 `8*sizeof(ULONG_PTR)`；两个 MPI 入口
+  将 `MPI_Comm_rank` 提前使 `mpi_check` 诊断带真实 rank；MSVC 下请求
+  sanitizer 补 WARNING；docker 复现脚本 ctest 加 `--timeout 120` 并断言
+  Python 解释器（Dockerfile 改用 python3）；`ctest_gate.py`/
+  `check_rank1_equivalence.py` 子进程加 120s 超时；`run_benchmark.sh` 加
+  可执行文件存在性检查；`analyze_speedups.py` mode 守卫收紧为 `all`。
+- 测试加固：新增 `serial_help_mode` CTest（47→48 项）；`inject_migrant`
+  拒绝路径直断言、Ackley 非零探针与 `from_name(NULL)` 分支、CLI 负例、
+  ctest_gate 退出码归一化与超时用例、analyze_speedups mode 拒绝用例。
+  Python 182→186。金标正则与 MPI 钉子逐位不变（全量重建零警告，
+  CTest 48/48、Python 186 全绿）。
 
 ## [1.0.0] - 2026-11-19
 
