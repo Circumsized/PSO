@@ -26,7 +26,7 @@ ctest --test-dir build --output-on-failure -C Release
 cmake -S . -B build -DPSO_ENABLE_MPI=ON -DPSO_ENABLE_OPENMP=ON && cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 
-# Python tooling (183 tests, full suite ~8 s; also registered in CTest and ci.yml)
+# Python tooling (175 tests, full suite ~8 s; also registered in CTest and ci.yml)
 python -m unittest discover -s scripts/tests -p 'test_*.py' -v
 ```
 
