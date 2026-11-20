@@ -31,7 +31,7 @@ python -m unittest discover -s scripts/tests -p 'test_*.py' -v
 ```
 
 - Options: `PSO_ENABLE_SANITIZERS=ON` (Debug, non-MSVC; auto-disables when libasan/libubsan are missing). Linux sanitizer/Release reproduction: `scripts/linux_docker_check.sh` with `Dockerfile.linux`.
-- Several pre-existing build trees exist (`build/`, `build-warn/`, `build-sanitize/`, …); all gitignored. Note `scripts/tests/test_io_failures.py` resolves binaries from `PSO_TEST_BUILD_DIR` when CTest injects it (the current build tree wins and a missing binary fails), otherwise it falls back to searching `build-warn/` then `build/` — build in either before relying on it directly.
+- Several pre-existing build trees exist (`build/`, `build-warn/`, `build-sanitize/`, …); all gitignored. Note `scripts/tests/test_io_failures.py` resolves binaries from `PSO_TEST_BUILD_DIR` when CTest injects it (the current build tree wins and a missing binary fails), otherwise it falls back to searching `build-warn/` then `build/` — build in either before relying on it directly. The two MPI targets (`pso_mpi_ms`/`pso_mpi_island`) are treated as optional binaries via `optional_built`: when `PSO_TEST_BUILD_DIR` is injected but they are missing, the corresponding cases skip — a deliberate exemption, in contrast to `built()`'s must-fail semantics.
 
 ## Architecture invariants (do not break)
 
