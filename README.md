@@ -2,6 +2,8 @@
 
 本项目是一个使用 **C11** 编写的粒子群优化（PSO）实现：串行、MPI 全局数据并行与环形岛模型三个入口。MPI 提供进程间并行，OpenMP 提供可选的进程内并行。
 
+[![CI](https://github.com/Circumsized/PSO/actions/workflows/ci.yml/badge.svg)](https://github.com/Circumsized/PSO/actions/workflows/ci.yml)
+
 程序最小化内置基准函数，支持串行、MPI 全局数据并行和 MPI 环形岛模型。三个入口共享粒子更新、参数解析、评估预算和结果格式。Python 脚本用于实验调度与结果分析。运行求解器不需要 Python 或 MATLAB。
 
 ## 1. 选择执行方式

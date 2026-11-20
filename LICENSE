@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Scope notes:
-
-- This license applies to the refactored implementation and tooling in this
-  repository: src/, include/, tests/, scripts/, CMakeLists.txt, Makefile,
-  and docs/.
-- results/ contains measured benchmark data from the local host and is
-  excluded from the source distribution.

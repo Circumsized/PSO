@@ -65,10 +65,18 @@
   与限制；docs/03 绑核段补官方依据引用；AGENTS.md 新增「修复与
   复审流程」节（批次化、计数级联、外部来源登记、独立复审、红线
   核查、门禁七条）。
+- 发布面整理（本地就绪，推送与 tag 待确认）：CITATION.cff 发布日期与
+  CHANGELOG [1.0.0] 对齐（2026-11-19）；CHANGELOG 1.0.0 分节改为标准
+  Added 结构、公开发布后记明确标注日期、补版本对比链接；LICENSE 恢复为
+  标准 MIT 正文（Scope notes 迁至 NOTICE.md，使 GitHub 许可证探测识别为
+  MIT，notes 内容未丢失）；README 增加 CI 状态徽章；CI 的
+  `actions/checkout@v4→v7`、`actions/setup-python@v5→v7`（已用 gh api
+  核实两者当前主版本均为 v7，消除 Node.js 20 弃用警告；实际生效由推送后
+  的 CI 实证）。
 
 ## [1.0.0] - 2026-11-19
 
-### 首次公开发布
+### Added
 
 - 串行、MPI 数据并行与环形岛模型三个 C11 求解器入口，共享核心、命令行、
   评估预算换算与 `pso_v1` 结果协议；OpenMP 混合并行可选。
@@ -86,8 +94,10 @@
   `/dev/full` 写失败哨兵与跨平台"只读 history 目标打开失败不被删除"用例，
   源码哨兵扩展到 `unlink(`/`DeleteFileA(`/`DeleteFileW(`（Linux 侧由 CI 实跑）。
   CTest 45→47，Python 175→178。
-- 2026-11-20 GitHub Actions 四作业（Windows MS-MPI / Linux Debug+ASan+UBSan /
-  Linux Release / Python）首次全绿（run 44653870418，当时套件 45 项；
-  CTest 45→47 后的首次全绿为 run 44655986835，提交 e4f267f）：MS-MPI 资产钉定
-  v10.1.1、OpenMPI 4-rank 测试加 `--oversubscribe`、manifest 主机探测在
-  runner 上降级不中断。
+- 公开发布后记（2026-11-20）：GitHub Actions 四作业（Windows MS-MPI /
+  Linux Debug+ASan+UBSan / Linux Release / Python）首次全绿
+  （run 44653870418，当时套件 45 项；CTest 45→47 后的首次全绿为
+  run 44655986835，提交 e4f267f）：MS-MPI 资产钉定 v10.1.1、OpenMPI
+  4-rank 测试加 `--oversubscribe`、manifest 主机探测在 runner 上降级不中断。
+
+[1.0.0]: https://github.com/Circumsized/PSO/releases/tag/v1.0.0

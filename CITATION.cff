@@ -10,7 +10,7 @@ type: software
 authors:
   - name: PSO modernization contributors
 version: 1.0.0
-date-released: '2026-09-12'
+date-released: '2026-11-19'
 license: MIT
 abstract: >-
   Provides a verified serial baseline, a corrected MPI

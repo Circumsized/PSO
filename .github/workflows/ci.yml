@@ -15,7 +15,7 @@ jobs:
       matrix:
         build_type: [Release, Debug]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install MPI
         run: sudo apt-get update && sudo apt-get install -y openmpi-bin libopenmpi-dev
       - name: Configure
@@ -51,7 +51,7 @@ jobs:
     name: Windows MinGW + MS-MPI
     runs-on: windows-2025
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install MS-MPI
         shell: pwsh
         run: |
@@ -88,8 +88,8 @@ jobs:
     name: Python tooling
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Unit tests
