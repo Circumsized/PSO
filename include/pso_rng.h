@@ -108,7 +108,7 @@ static inline uint64_t pso_rng_below(pso_rng_t *r, uint64_t n)
  * 等距平移窗口——结构化相关，而非独立流。NumPy 并行随机数文档把
  * root_seed+worker_id 式派生明列为 UNSAFE（多轮批量扫参时不同根种子
  * 的 worker 种子集可重叠）。改为 SeedSequence 式哈希派生会使全部既有
- * 位级结果失效（违反 AGENTS.md 可复现性红线与已冻结数字），故维持
+ * 位级结果失效（违反项目可复现性红线，见 docs/02，与已冻结数字冲突），故维持
  * 现状，留待主版本变更时再议。乘法式（乘数约 1.14e19）下实际种子
  * 碰撞需 |Δseed|=K·|Δstream|，现实参数范围内不可达；缺陷在相关性
  * 而非碰撞。 */

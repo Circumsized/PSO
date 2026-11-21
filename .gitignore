@@ -45,3 +45,4 @@ Thumbs.db
 /.superpowers/
 # 本地 CI 失败日志抓取（审阅用）
 /ci-fail-*.log
+/AGENTS.md
